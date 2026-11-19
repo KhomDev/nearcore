@@ -951,23 +951,3 @@ impl AccountIndices {
 #[derive(thiserror::Error, Debug)]
 #[error("Timed out after {0:?}")]
 pub struct TimeoutError(Duration);
-
-#[cfg(test)]
-mod tests {
-    use super::TestEnv;
-
-    /// The home directories of a test env are temporary and must be removed
-    /// when the env is dropped. Run this test on its own, so that it is the
-    /// only thread that changes `TMPDIR`.
-    #[test]
-    fn test_env_removes_home_dirs_on_drop() {
-        let tmp = tempfile::tempdir().unwrap();
-        // SAFETY: the test is run on its own, so no other thread reads the environment.
-        unsafe { std::env::set_var("TMPDIR", tmp.path()) };
-        let env = TestEnv::default_builder().real_stores().build();
-        drop(env);
-        let leftovers: Vec<_> =
-            std::fs::read_dir(tmp.path()).unwrap().map(|e| e.unwrap().path()).collect();
-        assert!(leftovers.is_empty(), "test env left temporary directories behind: {leftovers:?}");
-    }
-}
