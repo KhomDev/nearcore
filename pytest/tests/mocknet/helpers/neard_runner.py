@@ -1580,7 +1580,7 @@ class NeardRunner:
         rpc_thread.start()
 
         download_binaries()
-        self.binaries_ready.set()
+        pass  # mutant: flag never set
 
         # TODO: maybe use asyncio? kind of silly to use multiple threads for
         # something so lightweight
