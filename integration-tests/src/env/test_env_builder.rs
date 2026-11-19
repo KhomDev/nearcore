@@ -165,9 +165,8 @@ impl TestEnvBuilder {
 
     fn ensure_home_dirs(mut self) -> Self {
         if self.home_dirs.is_none() {
-            let temp_dirs = (0..self.clients.len())
-                .map(|_| tempfile::tempdir().unwrap())
-                .collect_vec();
+            let temp_dirs =
+                (0..self.clients.len()).map(|_| tempfile::tempdir().unwrap()).collect_vec();
             self.home_dirs = Some(temp_dirs.iter().map(|d| d.path().to_path_buf()).collect_vec());
             self.home_dir_guards = temp_dirs;
         }
