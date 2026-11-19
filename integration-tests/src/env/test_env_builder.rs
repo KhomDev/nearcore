@@ -44,6 +44,9 @@ pub struct TestEnvBuilder {
     clients: Vec<AccountId>,
     validators: Vec<AccountId>,
     home_dirs: Option<Vec<PathBuf>>,
+    // Owns the temporary home directories in `home_dirs`, so they are removed
+    // when the built `TestEnv` is dropped.
+    home_dir_guards: Vec<tempfile::TempDir>,
     stores: Option<Vec<Store>>,
     contract_caches: Option<Vec<Box<dyn ContractRuntimeCache>>>,
     epoch_managers: Option<Vec<Arc<EpochManagerHandle>>>,
@@ -77,6 +80,7 @@ impl TestEnvBuilder {
             clients,
             validators,
             home_dirs: None,
+            home_dir_guards: Vec::new(),
             stores: None,
             contract_caches: None,
             epoch_managers: None,
@@ -161,13 +165,11 @@ impl TestEnvBuilder {
 
     fn ensure_home_dirs(mut self) -> Self {
         if self.home_dirs.is_none() {
-            let home_dirs = (0..self.clients.len())
-                .map(|_| {
-                    let temp_dir = tempfile::tempdir().unwrap();
-                    temp_dir.into_path()
-                })
+            let temp_dirs = (0..self.clients.len())
+                .map(|_| tempfile::tempdir().unwrap())
                 .collect_vec();
-            self.home_dirs = Some(home_dirs)
+            self.home_dirs = Some(temp_dirs.iter().map(|d| d.path().to_path_buf()).collect_vec());
+            self.home_dir_guards = temp_dirs;
         }
         self
     }
@@ -630,6 +632,7 @@ impl TestEnvBuilder {
             .collect();
 
         TestEnv {
+            home_dir_guards: self.home_dir_guards,
             clock,
             actor_system,
             chain_genesis,
