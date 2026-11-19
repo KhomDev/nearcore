@@ -671,3 +671,22 @@ impl TestEnvBuilder {
         self.state_snapshot_enabled
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::TestEnv;
+
+    /// The home directories created for `real_stores()` are temporary and
+    /// must be removed when the built `TestEnv` is dropped.
+    #[test]
+    fn test_env_removes_home_dirs_on_drop() {
+        let builder = TestEnv::default_builder().real_stores();
+        let home_dirs = builder.home_dirs.clone().unwrap();
+        assert!(home_dirs.iter().all(|dir| dir.exists()));
+
+        drop(builder.build());
+
+        let leftovers: Vec<_> = home_dirs.iter().filter(|dir| dir.exists()).collect();
+        assert!(leftovers.is_empty(), "test env left home directories behind: {leftovers:?}");
+    }
+}
